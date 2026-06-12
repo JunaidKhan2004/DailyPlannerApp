@@ -17,6 +17,18 @@ class TaskCard extends ConsumerWidget {
 
   final TaskModel task;
 
+  bool get _isOverdue {
+    if (task.isCompleted) return false;
+    final today = AppDateUtils.dateOnly(DateTime.now());
+    if (task.dueDate.isBefore(today)) return true;
+    if (AppDateUtils.isSameDay(task.dueDate, DateTime.now()) &&
+        task.dueTimeMinutes != null) {
+      final nowMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
+      return task.dueTimeMinutes! < nowMinutes;
+    }
+    return false;
+  }
+
   Color get _priorityColor => switch (task.priority) {
         TaskPriority.high => AppTheme.priorityHigh,
         TaskPriority.medium => AppTheme.priorityMedium,
@@ -31,8 +43,16 @@ class TaskCard extends ConsumerWidget {
 
   String get _priorityLabel => switch (task.priority) {
         TaskPriority.high => 'High',
-        TaskPriority.medium => 'Medium',
+        TaskPriority.medium => 'Med',
         TaskPriority.low => 'Low',
+      };
+
+  Color get _categoryColor => switch (task.category) {
+        TaskCategory.personal => AppTheme.mauve,
+        TaskCategory.work => const Color(0xFF5B8DEF),
+        TaskCategory.health => const Color(0xFF4CAF50),
+        TaskCategory.study => const Color(0xFFFF9800),
+        TaskCategory.other => const Color(0xFF9E9E9E),
       };
 
   @override
@@ -80,9 +100,12 @@ class TaskCard extends ConsumerWidget {
           opacity: task.isCompleted ? 0.65 : 1,
           child: Surface3D(
             color: theme.colorScheme.surfaceContainerLow,
-            edgeColor: _priorityColor.withValues(alpha: 0.75),
-            borderColor:
-                theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            edgeColor: _isOverdue
+                ? AppTheme.priorityHigh.withValues(alpha: 0.9)
+                : _priorityColor.withValues(alpha: 0.75),
+            borderColor: _isOverdue
+                ? AppTheme.priorityHigh.withValues(alpha: 0.35)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             depth: 5,
             borderRadius: 18,
             onTap: () => context.push(AppRoutes.editTask, extra: task),
@@ -143,24 +166,73 @@ class TaskCard extends ConsumerWidget {
                               ),
                             ],
                             const SizedBox(height: 8),
-                            Row(
+                            // Chips row
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
+                                _Chip(
+                                  label: task.category.label,
+                                  color: _categoryColor,
+                                  icon: null,
+                                  emoji: task.category.emoji,
+                                ),
                                 _Chip(
                                   label: _priorityLabel,
                                   color: _priorityColor,
                                   icon: _priorityIcon,
                                 ),
-                                if (task.dueTimeMinutes != null) ...[
-                                  const SizedBox(width: 8),
+                                if (task.dueTimeMinutes != null)
                                   _Chip(
                                     label: AppDateUtils.formatTimeFromMinutes(
                                         task.dueTimeMinutes!),
                                     color: theme.colorScheme.primary,
                                     icon: Iconsax.clock,
                                   ),
-                                ],
+                                if (_isOverdue)
+                                  _Chip(
+                                    label: 'Overdue',
+                                    color: AppTheme.priorityHigh,
+                                    icon: Iconsax.warning_2,
+                                  ),
                               ],
                             ),
+                            // Subtask progress bar
+                            if (task.subtasks.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: task.subtasks.isEmpty
+                                            ? 0
+                                            : task.subtasksDone /
+                                                task.subtasks.length,
+                                        minHeight: 4,
+                                        backgroundColor: theme
+                                            .colorScheme.outlineVariant
+                                            .withValues(alpha: 0.3),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                _priorityColor),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${task.subtasksDone}/${task.subtasks.length}',
+                                    style:
+                                        theme.textTheme.labelSmall?.copyWith(
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -179,11 +251,12 @@ class TaskCard extends ConsumerWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color, this.icon});
+  const _Chip({required this.label, required this.color, this.icon, this.emoji});
 
   final String label;
   final Color color;
   final IconData? icon;
+  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +269,10 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
+          if (emoji != null) ...[
+            Text(emoji!, style: const TextStyle(fontSize: 11)),
+            const SizedBox(width: 4),
+          ] else if (icon != null) ...[
             Icon(icon, size: 12, color: color),
             const SizedBox(width: 4),
           ],

@@ -2,6 +2,50 @@ import 'package:hive_ce/hive.dart';
 
 enum TaskPriority { low, medium, high }
 
+enum TaskCategory {
+  personal,
+  work,
+  health,
+  study,
+  other;
+
+  String get label => switch (this) {
+        TaskCategory.personal => 'Personal',
+        TaskCategory.work => 'Work',
+        TaskCategory.health => 'Health',
+        TaskCategory.study => 'Study',
+        TaskCategory.other => 'Other',
+      };
+
+  String get emoji => switch (this) {
+        TaskCategory.personal => '🏠',
+        TaskCategory.work => '💼',
+        TaskCategory.health => '💪',
+        TaskCategory.study => '📚',
+        TaskCategory.other => '📌',
+      };
+}
+
+class SubTask {
+  SubTask({required this.id, required this.title, this.isDone = false});
+
+  final String id;
+  String title;
+  bool isDone;
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'isDone': isDone,
+      };
+
+  factory SubTask.fromMap(Map m) => SubTask(
+        id: m['id'] as String,
+        title: m['title'] as String,
+        isDone: m['isDone'] as bool? ?? false,
+      );
+}
+
 class TaskModel extends HiveObject {
   TaskModel({
     required this.id,
@@ -10,11 +54,13 @@ class TaskModel extends HiveObject {
     required this.dueDate,
     this.dueTimeMinutes,
     this.priority = TaskPriority.medium,
+    this.category = TaskCategory.personal,
     this.isCompleted = false,
     required this.createdAt,
     required this.updatedAt,
     this.isSynced = false,
-  });
+    List<SubTask>? subtasks,
+  }) : subtasks = subtasks ?? [];
 
   final String id;
   String title;
@@ -27,12 +73,14 @@ class TaskModel extends HiveObject {
   int? dueTimeMinutes;
 
   TaskPriority priority;
+  TaskCategory category;
   bool isCompleted;
   final DateTime createdAt;
   DateTime updatedAt;
-
-  /// False while a change is pending upload to Supabase.
   bool isSynced;
+  List<SubTask> subtasks;
+
+  int get subtasksDone => subtasks.where((s) => s.isDone).length;
 
   TaskModel copyWith({
     String? title,
@@ -40,9 +88,11 @@ class TaskModel extends HiveObject {
     DateTime? dueDate,
     int? Function()? dueTimeMinutes,
     TaskPriority? priority,
+    TaskCategory? category,
     bool? isCompleted,
     DateTime? updatedAt,
     bool? isSynced,
+    List<SubTask>? subtasks,
   }) {
     return TaskModel(
       id: id,
@@ -52,14 +102,15 @@ class TaskModel extends HiveObject {
       dueTimeMinutes:
           dueTimeMinutes != null ? dueTimeMinutes() : this.dueTimeMinutes,
       priority: priority ?? this.priority,
+      category: category ?? this.category,
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
-      isSynced: isSynced ?? false,
+      isSynced: isSynced ?? this.isSynced,
+      subtasks: subtasks ?? this.subtasks,
     );
   }
 
-  /// For Supabase sync (step 4).
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -67,9 +118,11 @@ class TaskModel extends HiveObject {
         'due_date': dueDate.toIso8601String(),
         'due_time_minutes': dueTimeMinutes,
         'priority': priority.name,
+        'category': category.name,
         'is_completed': isCompleted,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
+        'subtasks': subtasks.map((s) => s.toMap()).toList(),
       };
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
@@ -79,10 +132,17 @@ class TaskModel extends HiveObject {
         dueDate: DateTime.parse(json['due_date'] as String),
         dueTimeMinutes: json['due_time_minutes'] as int?,
         priority: TaskPriority.values.byName(json['priority'] as String),
+        category: json['category'] != null
+            ? TaskCategory.values.byName(json['category'] as String)
+            : TaskCategory.personal,
         isCompleted: json['is_completed'] as bool,
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
         isSynced: true,
+        subtasks: (json['subtasks'] as List<dynamic>?)
+                ?.map((e) => SubTask.fromMap(e as Map))
+                .toList() ??
+            [],
       );
 }
 
@@ -100,10 +160,17 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       dueDate: fields['dueDate'] as DateTime,
       dueTimeMinutes: fields['dueTimeMinutes'] as int?,
       priority: TaskPriority.values[fields['priority'] as int],
+      category: fields['category'] != null
+          ? TaskCategory.values[fields['category'] as int]
+          : TaskCategory.personal,
       isCompleted: fields['isCompleted'] as bool,
       createdAt: fields['createdAt'] as DateTime,
       updatedAt: fields['updatedAt'] as DateTime,
       isSynced: fields['isSynced'] as bool,
+      subtasks: (fields['subtasks'] as List<dynamic>?)
+              ?.map((e) => SubTask.fromMap(e as Map))
+              .toList() ??
+          [],
     );
   }
 
@@ -116,10 +183,12 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       'dueDate': obj.dueDate,
       'dueTimeMinutes': obj.dueTimeMinutes,
       'priority': obj.priority.index,
+      'category': obj.category.index,
       'isCompleted': obj.isCompleted,
       'createdAt': obj.createdAt,
       'updatedAt': obj.updatedAt,
       'isSynced': obj.isSynced,
+      'subtasks': obj.subtasks.map((s) => s.toMap()).toList(),
     });
   }
 }

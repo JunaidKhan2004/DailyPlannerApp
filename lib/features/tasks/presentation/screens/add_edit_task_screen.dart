@@ -13,6 +13,8 @@ import '../../../../core/widgets/surface_3d.dart';
 import '../../data/models/task_model.dart';
 import '../providers/task_providers.dart';
 
+const _uuid = Uuid();
+
 class AddEditTaskScreen extends ConsumerStatefulWidget {
   const AddEditTaskScreen({super.key, this.task, this.initialDate});
 
@@ -31,6 +33,9 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
   late DateTime _dueDate;
   TimeOfDay? _dueTime;
   late TaskPriority _priority;
+  late TaskCategory _category;
+  late List<SubTask> _subtasks;
+  final _subtaskController = TextEditingController();
 
   late final AnimationController _entryCtrl;
 
@@ -45,6 +50,8 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
   late final Animation<Offset> _field2Slide;
   late final Animation<double> _field3Fade;
   late final Animation<Offset> _field3Slide;
+  late final Animation<double> _field4Fade;
+  late final Animation<Offset> _field4Slide;
   late final Animation<double> _btnFade;
   late final Animation<Offset> _btnSlide;
 
@@ -64,33 +71,37 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
             minute: task.dueTimeMinutes! % 60)
         : null;
     _priority = task?.priority ?? TaskPriority.medium;
+    _category = task?.category ?? TaskCategory.personal;
+    _subtasks = task?.subtasks.map((s) => SubTask(id: s.id, title: s.title, isDone: s.isDone)).toList() ?? [];
 
     _entryCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 950),
     );
 
-    Animation<double> _fade(double s, double e) => CurvedAnimation(
+    Animation<double> fade(double s, double e) => CurvedAnimation(
           parent: _entryCtrl,
           curve: Interval(s, e, curve: Curves.easeOut),
         );
-    Animation<Offset> _slide(double s, double e) =>
+    Animation<Offset> slide(double s, double e) =>
         Tween(begin: const Offset(0, 0.18), end: Offset.zero).animate(
           CurvedAnimation(
               parent: _entryCtrl,
               curve: Interval(s, e, curve: Curves.easeOutCubic)),
         );
 
-    _headerFade = _fade(0.0, 0.4);
-    _headerSlide = _slide(0.0, 0.45);
-    _field1Fade = _fade(0.12, 0.52);
-    _field1Slide = _slide(0.12, 0.52);
-    _field2Fade = _fade(0.24, 0.62);
-    _field2Slide = _slide(0.24, 0.62);
-    _field3Fade = _fade(0.36, 0.72);
-    _field3Slide = _slide(0.36, 0.72);
-    _btnFade = _fade(0.52, 0.88);
-    _btnSlide = _slide(0.52, 0.88);
+    _headerFade = fade(0.0, 0.4);
+    _headerSlide = slide(0.0, 0.45);
+    _field1Fade = fade(0.12, 0.52);
+    _field1Slide = slide(0.12, 0.52);
+    _field2Fade = fade(0.24, 0.62);
+    _field2Slide = slide(0.24, 0.62);
+    _field3Fade = fade(0.36, 0.72);
+    _field3Slide = slide(0.36, 0.72);
+    _field4Fade = fade(0.44, 0.80);
+    _field4Slide = slide(0.44, 0.80);
+    _btnFade = fade(0.58, 0.92);
+    _btnSlide = slide(0.58, 0.92);
 
     _entryCtrl.forward();
   }
@@ -99,6 +110,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _subtaskController.dispose();
     _entryCtrl.dispose();
     super.dispose();
   }
@@ -133,21 +145,34 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
         dueDate: _dueDate,
         dueTimeMinutes: () => timeMinutes,
         priority: _priority,
+        category: _category,
+        subtasks: _subtasks,
       ));
     } else {
       final now = DateTime.now();
       await repo.addTask(TaskModel(
-        id: const Uuid().v4(),
+        id: _uuid.v4(),
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         dueDate: _dueDate,
         dueTimeMinutes: timeMinutes,
         priority: _priority,
+        category: _category,
+        subtasks: _subtasks,
         createdAt: now,
         updatedAt: now,
       ));
     }
     if (mounted) context.pop();
+  }
+
+  void _addSubtask() {
+    final text = _subtaskController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _subtasks.add(SubTask(id: _uuid.v4(), title: text));
+      _subtaskController.clear();
+    });
   }
 
   Widget _animated({
@@ -241,8 +266,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
                                 ),
                                 _FieldRow(
                                   icon: Iconsax.note_text,
-                                  iconPadding:
-                                      const EdgeInsets.only(bottom: 52),
+                                  multiline: true,
                                   child: TextFormField(
                                     controller: _descriptionController,
                                     textCapitalization:
@@ -353,6 +377,213 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
                                 ],
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+
+                  // ── Category ──
+                  SliverToBoxAdapter(
+                    child: _animated(
+                      fade: _field4Fade,
+                      slide: _field4Slide,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionChip(
+                              icon: Iconsax.category_2,
+                              label: 'Category',
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                for (final c in TaskCategory.values) ...[
+                                  Expanded(
+                                    child: _CategoryOption(
+                                      category: c,
+                                      isSelected: _category == c,
+                                      onTap: () =>
+                                          setState(() => _category = c),
+                                    ),
+                                  ),
+                                  if (c != TaskCategory.values.last)
+                                    const SizedBox(width: 8),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+
+                  // ── Subtasks ──
+                  SliverToBoxAdapter(
+                    child: _animated(
+                      fade: _btnFade,
+                      slide: _btnSlide,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionChip(
+                              icon: Iconsax.task_square,
+                              label: 'Subtasks',
+                            ),
+                            const SizedBox(height: 10),
+                            // Add subtask input
+                            Surface3D(
+                              color: theme.colorScheme.surfaceContainerLow,
+                              edgeColor:
+                                  AppTheme.dustyPink.withValues(alpha: 0.9),
+                              borderColor: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.4),
+                              depth: 5,
+                              borderRadius: 18,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 4),
+                              child: Row(
+                                children: [
+                                  Icon(Iconsax.add_circle,
+                                      size: 18,
+                                      color: AppTheme.mauve
+                                          .withValues(alpha: 0.7)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _subtaskController,
+                                      textCapitalization:
+                                          TextCapitalization.sentences,
+                                      onSubmitted: (_) => _addSubtask(),
+                                      style: theme.textTheme.bodyMedium,
+                                      decoration: InputDecoration(
+                                        hintText: 'Add a subtask...',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme
+                                              .onSurfaceVariant
+                                              .withValues(alpha: 0.5),
+                                        ),
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 13),
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _addSubtask,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.mauve
+                                            .withValues(alpha: 0.15),
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        'Add',
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                          color: AppTheme.mauve,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Subtask list
+                            if (_subtasks.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              ...List.generate(_subtasks.length, (i) {
+                                final s = _subtasks[i];
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 6),
+                                  child: Surface3D(
+                                    color: theme
+                                        .colorScheme.surfaceContainerLow,
+                                    edgeColor: AppTheme.dustyPink
+                                        .withValues(alpha: 0.7),
+                                    borderColor: theme
+                                        .colorScheme.outlineVariant
+                                        .withValues(alpha: 0.3),
+                                    depth: 3,
+                                    borderRadius: 14,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 10),
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => setState(
+                                              () => s.isDone = !s.isDone),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            width: 22,
+                                            height: 22,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: s.isDone
+                                                  ? AppTheme.mauve
+                                                  : Colors.transparent,
+                                              border: Border.all(
+                                                  color: AppTheme.mauve,
+                                                  width: 2),
+                                            ),
+                                            child: s.isDone
+                                                ? const Icon(
+                                                    Icons.check_rounded,
+                                                    size: 14,
+                                                    color: Colors.white)
+                                                : null,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            s.title,
+                                            style: theme
+                                                .textTheme.bodyMedium
+                                                ?.copyWith(
+                                              decoration: s.isDone
+                                                  ? TextDecoration
+                                                      .lineThrough
+                                                  : null,
+                                              color: s.isDone
+                                                  ? theme.colorScheme
+                                                      .onSurfaceVariant
+                                                  : null,
+                                            ),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => setState(
+                                              () => _subtasks.removeAt(i)),
+                                          child: Icon(
+                                            Iconsax.close_circle,
+                                            size: 16,
+                                            color: theme.colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
                           ],
                         ),
                       ),
@@ -479,11 +710,6 @@ class _TaskHeader extends StatelessWidget {
   final TaskPriority priority;
   final VoidCallback onClose;
 
-  Color get _priorityColor => switch (priority) {
-        TaskPriority.high => AppTheme.priorityHigh,
-        TaskPriority.medium => AppTheme.priorityMedium,
-        TaskPriority.low => AppTheme.priorityLow,
-      };
 
   @override
   Widget build(BuildContext context) {
@@ -616,20 +842,22 @@ class _FieldRow extends StatelessWidget {
   const _FieldRow({
     required this.icon,
     required this.child,
-    this.iconPadding,
+    this.multiline = false,
   });
   final IconData icon;
   final Widget child;
-  final EdgeInsets? iconPadding;
+  final bool multiline;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: iconPadding ?? const EdgeInsets.only(top: 16),
+          padding: multiline
+              ? const EdgeInsets.only(top: 14)
+              : EdgeInsets.zero,
           child: Icon(
             icon,
             size: 18,
@@ -716,6 +944,65 @@ class _PickerTile extends StatelessWidget {
               child: Icon(Iconsax.close_circle,
                   size: 16, color: theme.colorScheme.onSurfaceVariant),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Category option ───────────────────────────────────────────────────────────
+
+class _CategoryOption extends StatelessWidget {
+  const _CategoryOption({
+    required this.category,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final TaskCategory category;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  Color get _color => switch (category) {
+        TaskCategory.personal => AppTheme.mauve,
+        TaskCategory.work => const Color(0xFF5B8DEF),
+        TaskCategory.health => const Color(0xFF4CAF50),
+        TaskCategory.study => const Color(0xFFFF9800),
+        TaskCategory.other => const Color(0xFF9E9E9E),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Surface3D(
+      color: isSelected ? _color : theme.colorScheme.surfaceContainerLow,
+      edgeColor: isSelected
+          ? Surface3D.darken(_color, 0.3)
+          : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+      borderColor: isSelected
+          ? Surface3D.darken(_color, 0.15)
+          : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+      depth: isSelected ? 5 : 4,
+      borderRadius: 14,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            category.emoji,
+            style: const TextStyle(fontSize: 20),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            category.label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isSelected
+                  ? Colors.white
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
