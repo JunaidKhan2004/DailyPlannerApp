@@ -1,4 +1,4 @@
-# Daily Planner App
+# Priora
 
 A feature-rich Flutter productivity app for managing daily tasks, tracking habits, and staying focused.
 

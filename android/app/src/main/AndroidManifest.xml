@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="daily_planner_app"
+        android:label="Priora"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
