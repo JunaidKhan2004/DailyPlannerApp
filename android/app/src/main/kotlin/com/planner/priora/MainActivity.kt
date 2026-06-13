@@ -1,4 +1,4 @@
-package com.example.daily_planner_app
+package com.planner.priora
 
 import io.flutter.embedding.android.FlutterActivity
 
