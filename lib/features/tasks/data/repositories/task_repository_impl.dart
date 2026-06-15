@@ -1,4 +1,4 @@
-import '../../../../core/services/appwrite_service.dart';
+import '../../../../core/services/firestore_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../models/task_model.dart';
@@ -16,7 +16,7 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<void> addTask(TaskModel task) async {
     await _local.upsert(task);
     await NotificationService.scheduleTaskReminder(task);
-    await AppwriteService.upsertTask(task);
+    await FirestoreService.upsertTask(task);
   }
 
   @override
@@ -25,14 +25,14 @@ class TaskRepositoryImpl implements TaskRepository {
     await _local.upsert(updated);
     await NotificationService.cancelTaskReminder(task.id);
     await NotificationService.scheduleTaskReminder(updated);
-    await AppwriteService.upsertTask(updated);
+    await FirestoreService.upsertTask(updated);
   }
 
   @override
   Future<void> deleteTask(String id) async {
     await _local.delete(id);
     await NotificationService.cancelTaskReminder(id);
-    await AppwriteService.deleteTask(id);
+    await FirestoreService.deleteTask(id);
   }
 
   @override
@@ -46,6 +46,6 @@ class TaskRepositoryImpl implements TaskRepository {
     } else {
       await NotificationService.scheduleTaskReminder(updated);
     }
-    await AppwriteService.upsertTask(updated);
+    await FirestoreService.upsertTask(updated);
   }
 }

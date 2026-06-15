@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "260302773984",
+    "project_id": "priora-app-b7015",
+    "storage_bucket": "priora-app-b7015.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:260302773984:android:8a830438168cf95125ba85",
+        "android_client_info": {
+          "package_name": "com.planner.priora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "260302773984-1i067qod3age9ifrbcnc55ah13fj976e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.planner.priora",
+            "certificate_hash": "212d691f5bca5ff6c0038cafb60d25ce1bba826f"
+          }
+        },
+        {
+          "client_id": "260302773984-cvke2eop98ck9pq37veafd710vngpoo2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDI3EsZskYRMphIaezFI7p-MmXPAqWMwU8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "260302773984-cvke2eop98ck9pq37veafd710vngpoo2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

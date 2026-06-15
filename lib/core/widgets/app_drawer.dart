@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 
 import '../../app/router/app_router.dart';
 import '../../app/theme/app_theme.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/services/firebase_auth_service.dart';
+import 'confirm_dialog.dart';
 import 'surface_3d.dart';
 
 class AppDrawer extends ConsumerWidget {
@@ -16,6 +19,7 @@ class AppDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentRoute = GoRouterState.of(context).matchedLocation;
+    final user = ref.watch(currentUserProvider);
 
     return Drawer(
       backgroundColor: theme.colorScheme.surface,
@@ -38,6 +42,7 @@ class AppDrawer extends ConsumerWidget {
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
+                      // Avatar — photo if logged in, icon if guest
                       Container(
                         width: 52,
                         height: 52,
@@ -49,8 +54,19 @@ class AppDrawer extends ConsumerWidget {
                             width: 1.5,
                           ),
                         ),
-                        child: const Icon(Iconsax.calendar_2,
-                            color: Colors.white, size: 26),
+                        child: user?.photoURL != null
+                            ? ClipOval(
+                                child: Image.network(
+                                  user!.photoURL!,
+                                  width: 52,
+                                  height: 52,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Iconsax.user, color: Colors.white, size: 26),
+                                ),
+                              )
+                            : const Icon(Iconsax.calendar_2,
+                                color: Colors.white, size: 26),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -58,18 +74,22 @@ class AppDrawer extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Daily Planner',
+                              user?.displayName ?? 'Daily Planner',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              DateFormat('EEEE, d MMM').format(DateTime.now()),
+                              user?.email ?? DateFormat('EEEE, d MMM').format(DateTime.now()),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.7),
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -137,6 +157,35 @@ class AppDrawer extends ConsumerWidget {
                     ),
 
                     const Spacer(),
+
+                    // ── Login / Logout ──
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: _DrawerItem(
+                        icon: user != null ? Iconsax.logout : Iconsax.login,
+                        label: user != null ? 'Sign Out' : 'Sign In with Google',
+                        isSelected: false,
+                        onTap: () async {
+                          if (user != null) {
+                            Navigator.of(context).pop();
+                            final confirmed = await showConfirmDialog(
+                              context,
+                              title: 'Sign Out',
+                              message: 'Are you sure you want to sign out?',
+                              confirmLabel: 'Sign Out',
+                              icon: Iconsax.logout,
+                              confirmColor: AppTheme.priorityHigh,
+                            );
+                            if (confirmed) {
+                              await FirebaseAuthService.signOut();
+                            }
+                          } else {
+                            Navigator.of(context).pop();
+                            context.push(AppRoutes.login);
+                          }
+                        },
+                      ),
+                    ),
 
                     // ── Footer ──
                     Padding(

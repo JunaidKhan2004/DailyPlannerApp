@@ -189,7 +189,7 @@ class SettingsScreen extends ConsumerWidget {
                               _InfoRow(
                                 icon: Iconsax.cloud,
                                 label: 'Sync',
-                                value: 'Appwrite (Offline-first)',
+                                value: 'Firebase Firestore (Offline-first)',
                               ),
                             ],
                           ),
@@ -327,9 +327,14 @@ class _InfoRow extends StatelessWidget {
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
-          Text(value,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
               style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );

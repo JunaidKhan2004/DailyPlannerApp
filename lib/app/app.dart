@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/providers/auth_provider.dart';
 import '../features/settings/providers/settings_providers.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -11,6 +12,7 @@ class DailyPlannerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authSyncProvider); // triggers Firestore↔Hive sync on login
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
 

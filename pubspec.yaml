@@ -35,8 +35,13 @@ dependencies:
   flutter_local_notifications: ^18.0.0
   timezone: ^0.9.4
 
-  # Cloud sync
-  appwrite: ^13.0.0
+  # Firebase
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.0
+  google_sign_in: ^6.2.2
+  cloud_firestore: ^5.6.5
+  firebase_crashlytics: ^4.3.5
+  firebase_analytics: ^11.4.5
 
   # Persistence (settings, onboarding flag)
   shared_preferences: ^2.3.2
@@ -45,9 +50,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-
-dependency_overrides:
-  flutter_web_auth_2: ^4.0.0
 
 flutter:
   uses-material-design: true

@@ -3,10 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  cloud_firestore
   connectivity_plus
-  desktop_webview_window
-  url_launcher_windows
-  window_to_front
+  firebase_auth
+  firebase_core
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

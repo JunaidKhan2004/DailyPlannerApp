@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import '../../../app/theme/app_theme.dart';
@@ -266,14 +267,14 @@ class PomodoroScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           _PhaseTab(
-                            label: '🍅  Focus',
+                            label: 'Focus',
                             isSelected: pomo.phase == _Phase.focus,
                             color: AppTheme.deepPlum,
                             onTap: () => notifier.setPhase(_Phase.focus),
                           ),
                           const SizedBox(width: 4),
                           _PhaseTab(
-                            label: '☕  Short',
+                            label: 'Short',
                             isSelected: pomo.phase == _Phase.shortBreak,
                             color: const Color(0xFF2E7D32),
                             onTap: () =>
@@ -281,7 +282,7 @@ class PomodoroScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           _PhaseTab(
-                            label: '🌿  Long',
+                            label: 'Long',
                             isSelected: pomo.phase == _Phase.longBreak,
                             color: const Color(0xFF1565C0),
                             onTap: () =>
@@ -332,10 +333,16 @@ class PomodoroScreen extends ConsumerWidget {
                             width: 1.5,
                           ),
                         ),
-                        child: Text(
-                          '🍅',
-                          style: TextStyle(fontSize: filled ? 18 : 14),
-                        ),
+                        child: filled
+                            ? Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: colorLight.withValues(alpha: 0.7),
+                                ),
+                              )
+                            : null,
                       );
                     }),
                   ),
@@ -562,12 +569,12 @@ class _SegmentedTimerState extends State<_SegmentedTimer>
                     // Time
                     Text(
                       widget.timeLabel,
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w800,
+                      style: GoogleFonts.orbitron(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w700,
                         color: theme.colorScheme.onSurface,
                         height: 1,
-                        letterSpacing: -1,
+                        letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(height: 8),
