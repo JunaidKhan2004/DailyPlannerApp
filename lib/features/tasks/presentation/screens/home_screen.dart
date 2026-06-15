@@ -102,13 +102,12 @@ class HomeScreen extends ConsumerWidget {
                         lastDay: DateTime(2035),
                         focusedDay: selectedDate,
                         calendarFormat: calendarFormat,
-                        availableCalendarFormats: const {
-                          CalendarFormat.week: 'Week',
-                          CalendarFormat.month: 'Month',
+                        availableCalendarFormats: {
+                          calendarFormat: calendarFormat == CalendarFormat.week
+                              ? 'Week'
+                              : 'Month',
                         },
-                        onFormatChanged: (format) => ref
-                            .read(calendarFormatProvider.notifier)
-                            .state = format,
+                        onFormatChanged: (_) {},
                         selectedDayPredicate: (day) =>
                             isSameDay(day, selectedDate),
                         onDaySelected: (selected, _) =>

@@ -40,6 +40,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
   late final AnimationController _entryCtrl;
 
   bool get _isEditing => widget.task != null;
+  bool _saving = false;
 
   // Staggered entry intervals
   late final Animation<double> _headerFade;
@@ -134,36 +135,42 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
     final repo = ref.read(taskRepositoryProvider);
     final timeMinutes =
         _dueTime != null ? _dueTime!.hour * 60 + _dueTime!.minute : null;
-    if (_isEditing) {
-      await repo.updateTask(widget.task!.copyWith(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        dueDate: _dueDate,
-        dueTimeMinutes: () => timeMinutes,
-        priority: _priority,
-        category: _category,
-        subtasks: _subtasks,
-      ));
-    } else {
-      final now = DateTime.now();
-      await repo.addTask(TaskModel(
-        id: _uuid.v4(),
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        dueDate: _dueDate,
-        dueTimeMinutes: timeMinutes,
-        priority: _priority,
-        category: _category,
-        subtasks: _subtasks,
-        createdAt: now,
-        updatedAt: now,
-      ));
+    try {
+      if (_isEditing) {
+        await repo.updateTask(widget.task!.copyWith(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          dueDate: _dueDate,
+          dueTimeMinutes: () => timeMinutes,
+          priority: _priority,
+          category: _category,
+          subtasks: _subtasks,
+        ));
+      } else {
+        final now = DateTime.now();
+        await repo.addTask(TaskModel(
+          id: _uuid.v4(),
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          dueDate: _dueDate,
+          dueTimeMinutes: timeMinutes,
+          priority: _priority,
+          category: _category,
+          subtasks: _subtasks,
+          createdAt: now,
+          updatedAt: now,
+        ));
+      }
+      if (mounted) context.pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) context.pop();
   }
 
   void _addSubtask() {
@@ -609,24 +616,32 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
                           depth: 7,
                           borderRadius: 20,
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          onTap: _save,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Iconsax.tick_circle,
-                                  color: Colors.white, size: 22),
-                              const SizedBox(width: 10),
-                              Text(
-                                _isEditing ? 'Save Changes' : 'Create Task',
-                                style:
-                                    theme.textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.3,
+                          onTap: _saving ? null : _save,
+                          child: _saving
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Iconsax.tick_circle,
+                                        color: Colors.white, size: 22),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      _isEditing ? 'Save Changes' : 'Create Task',
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ),

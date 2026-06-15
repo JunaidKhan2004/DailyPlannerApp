@@ -66,9 +66,9 @@ class TaskCard extends ConsumerWidget {
         key: ValueKey(task.id),
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
-          extentRatio: 0.24,
+          extentRatio: 0.2,
           children: [
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: (_) async {
                 final confirmed = await showConfirmDialog(
                   context,
@@ -89,9 +89,8 @@ class TaskCard extends ConsumerWidget {
               },
               backgroundColor: theme.colorScheme.error,
               foregroundColor: theme.colorScheme.onError,
-              icon: Iconsax.trash,
-              label: 'Delete',
               borderRadius: BorderRadius.circular(18),
+              child: const Icon(Iconsax.trash, size: 24),
             ),
           ],
         ),

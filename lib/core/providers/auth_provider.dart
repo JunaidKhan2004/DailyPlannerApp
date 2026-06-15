@@ -15,11 +15,22 @@ final currentUserProvider = Provider<User?>((ref) {
 /// Watches auth state — triggers two-way Firestore↔Hive sync on login.
 /// Must be initialized once in app.dart via ref.watch/listen.
 final authSyncProvider = Provider<void>((ref) {
+  bool initialEmitHandled = false;
+
   ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
     final prevUser = previous?.valueOrNull;
     final nextUser = next.valueOrNull;
 
-    // Trigger sync only when user freshly logs in (was null, now non-null)
+    if (!initialEmitHandled) {
+      initialEmitHandled = true;
+      // First emit — user already logged in from previous session
+      if (nextUser != null) {
+        FirestoreService.syncOnLogin();
+      }
+      return;
+    }
+
+    // Subsequent emits — fresh login (was logged out, now logged in)
     if (prevUser == null && nextUser != null) {
       FirestoreService.syncOnLogin();
     }
