@@ -65,8 +65,8 @@ class TaskCard extends ConsumerWidget {
       child: Slidable(
         key: ValueKey(task.id),
         endActionPane: ActionPane(
-          motion: const DrawerMotion(),
-          extentRatio: 0.2,
+          motion: const StretchMotion(),
+          extentRatio: 0.22,
           children: [
             CustomSlidableAction(
               onPressed: (_) async {
@@ -80,17 +80,54 @@ class TaskCard extends ConsumerWidget {
                 await repo.deleteTask(task.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Task deleted'),
+                    SnackBar(
+                      content: const Text('Task deleted'),
                       behavior: SnackBarBehavior.floating,
+                      backgroundColor: theme.colorScheme.error,
                     ),
                   );
                 }
               },
-              backgroundColor: theme.colorScheme.error,
+              backgroundColor: Colors.transparent,
               foregroundColor: theme.colorScheme.onError,
-              borderRadius: BorderRadius.circular(18),
-              child: const Icon(Iconsax.trash, size: 24),
+              padding: EdgeInsets.zero,
+              child: Container(
+                margin: const EdgeInsets.only(left: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFE57373),
+                      theme.colorScheme.error,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.error.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Iconsax.trash, size: 22, color: Colors.white),
+                    SizedBox(height: 4),
+                    Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
