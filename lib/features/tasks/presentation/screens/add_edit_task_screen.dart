@@ -5,6 +5,8 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/widgets/animated_background.dart';
@@ -618,13 +620,9 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           onTap: _saving ? null : _save,
                           child: _saving
-                              ? const SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: Colors.white,
-                                  ),
+                              ? LoadingAnimationWidget.dotsTriangle(
+                                  color: Colors.white,
+                                  size: 28,
                                 )
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,

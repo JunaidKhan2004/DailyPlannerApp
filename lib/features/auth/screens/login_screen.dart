@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -159,13 +160,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           child: _loading
                               ? Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: theme.colorScheme.primary,
-                                    ),
+                                  child: LoadingAnimationWidget.dotsTriangle(
+                                    color: theme.colorScheme.primary,
+                                    size: 28,
                                   ),
                                 )
                               : Row(
