@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import '../../app/router/app_router.dart';
 import '../../app/theme/app_theme.dart';
@@ -11,11 +12,18 @@ import '../../core/services/firebase_auth_service.dart';
 import 'confirm_dialog.dart';
 import 'surface_3d.dart';
 
-class AppDrawer extends ConsumerWidget {
+class AppDrawer extends ConsumerStatefulWidget {
   const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends ConsumerState<AppDrawer> {
+  bool _signingOut = false;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentRoute = GoRouterState.of(context).matchedLocation;
@@ -161,30 +169,41 @@ class AppDrawer extends ConsumerWidget {
                     // ── Login / Logout ──
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: _DrawerItem(
-                        icon: user != null ? Iconsax.logout : Iconsax.login,
-                        label: user != null ? 'Sign Out' : 'Sign In with Google',
-                        isSelected: false,
-                        onTap: () async {
-                          if (user != null) {
-                            Navigator.of(context).pop();
-                            final confirmed = await showConfirmDialog(
-                              context,
-                              title: 'Sign Out',
-                              message: 'Are you sure you want to sign out?',
-                              confirmLabel: 'Sign Out',
-                              icon: Iconsax.logout,
-                              confirmColor: AppTheme.priorityHigh,
-                            );
-                            if (confirmed) {
-                              await FirebaseAuthService.signOut();
-                            }
-                          } else {
-                            Navigator.of(context).pop();
-                            context.push(AppRoutes.login);
-                          }
-                        },
-                      ),
+                      child: _signingOut
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              child: Center(
+                                child: LoadingAnimationWidget.dotsTriangle(
+                                  color: AppTheme.priorityHigh,
+                                  size: 28,
+                                ),
+                              ),
+                            )
+                          : _DrawerItem(
+                              icon: user != null ? Iconsax.logout : Iconsax.login,
+                              label: user != null ? 'Sign Out' : 'Sign In with Google',
+                              isSelected: false,
+                              onTap: () async {
+                                if (user != null) {
+                                  Navigator.of(context).pop();
+                                  final confirmed = await showConfirmDialog(
+                                    context,
+                                    title: 'Sign Out',
+                                    message: 'Are you sure you want to sign out?',
+                                    confirmLabel: 'Sign Out',
+                                    icon: Iconsax.logout,
+                                    confirmColor: AppTheme.priorityHigh,
+                                  );
+                                  if (!confirmed) return;
+                                  if (mounted) setState(() => _signingOut = true);
+                                  await FirebaseAuthService.signOut();
+                                  if (mounted) setState(() => _signingOut = false);
+                                } else {
+                                  Navigator.of(context).pop();
+                                  context.push(AppRoutes.login);
+                                }
+                              },
+                            ),
                     ),
 
                     // ── Footer ──
