@@ -1,0 +1,70 @@
+name: CD — Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'   # triggers on tags like v1.0.0, v1.2.3
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+
+      - name: Build Release APK
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          flutter build apk --release \
+            --dart-define=STORE_PASSWORD=$STORE_PASSWORD \
+            --dart-define=KEY_PASSWORD=$KEY_PASSWORD \
+            --dart-define=KEY_ALIAS=$KEY_ALIAS
+
+      - name: Rename APK
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/priora-${VERSION}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Priora ${{ github.ref_name }}
+          body: |
+            ## Priora ${{ github.ref_name }}
+
+            ### Install
+            Download `priora-${{ github.ref_name }}.apk` below and install on your Android device (min Android 6.0).
+
+            ### What's new
+            See [CHANGELOG](https://github.com/${{ github.repository }}/commits/main) for details.
+          files: build/app/outputs/flutter-apk/priora-${{ github.ref_name }}.apk
+          draft: false
+          prerelease: false
