@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "260302773984-4i4uergavr8ieifovubc6a22ktfoh0hg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.planner.priora",
+            "certificate_hash": "4058fc51f33365923def7146ebd1cf8c5d9b457b"
+          }
+        },
+        {
           "client_id": "260302773984-cvke2eop98ck9pq37veafd710vngpoo2.apps.googleusercontent.com",
           "client_type": 3
         }

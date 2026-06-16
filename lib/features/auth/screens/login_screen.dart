@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
 import '../../../core/widgets/animated_background.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/surface_3d.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -51,9 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       context.go('/');
     } else {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign-in cancelled or failed. Try again.')),
-      );
+      AppToast.error(context, 'Sign-in cancelled or failed. Try again.');
     }
   }
 

@@ -25,10 +25,19 @@ class FirestoreService {
   /// Upsert (create or update) a task document in Firestore.
   static Future<void> upsertTask(TaskModel task) async {
     final col = _tasksCol;
-    if (col == null) return;
+    if (col == null) {
+      // ignore: avoid_print
+      print('[Firestore] upsertTask: user not logged in, skipping');
+      return;
+    }
     try {
       await col.doc(task.id).set(_toMap(task), SetOptions(merge: true));
-    } catch (_) {}
+      // ignore: avoid_print
+      print('[Firestore] upsertTask OK: ${task.id}');
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Firestore] upsertTask ERROR: $e');
+    }
   }
 
   /// Delete a task document from Firestore.

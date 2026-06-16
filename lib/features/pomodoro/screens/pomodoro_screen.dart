@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/services/notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
@@ -74,10 +76,20 @@ class _PomodoroNotifier extends StateNotifier<_PomodoroState> {
   void toggle() {
     if (state.isRunning) {
       _timer?.cancel();
+      NotificationService.cancelPomodoroEnd();
       state = state.copyWith(isRunning: false);
     } else {
       state = state.copyWith(isRunning: true);
       _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      final label = switch (state.phase) {
+        _Phase.focus      => 'Focus',
+        _Phase.shortBreak => 'Short Break',
+        _Phase.longBreak  => 'Long Break',
+      };
+      NotificationService.schedulePomodoroEnd(
+        secondsFromNow: state.secondsLeft,
+        phaseLabel: label,
+      );
     }
   }
 
@@ -108,6 +120,7 @@ class _PomodoroNotifier extends StateNotifier<_PomodoroState> {
 
   void setPhase(_Phase phase) {
     _timer?.cancel();
+    NotificationService.cancelPomodoroEnd();
     final secs = switch (phase) {
       _Phase.focus      => _PomodoroState.focusDuration,
       _Phase.shortBreak => _PomodoroState.shortBreakDuration,
@@ -123,6 +136,7 @@ class _PomodoroNotifier extends StateNotifier<_PomodoroState> {
 
   void reset() {
     _timer?.cancel();
+    NotificationService.cancelPomodoroEnd();
     final secs = switch (state.phase) {
       _Phase.focus      => _PomodoroState.focusDuration,
       _Phase.shortBreak => _PomodoroState.shortBreakDuration,
@@ -374,7 +388,10 @@ class PomodoroScreen extends ConsumerWidget {
                           depth: 5,
                           borderRadius: 18,
                           padding: const EdgeInsets.all(17),
-                          onTap: notifier.reset,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            notifier.reset();
+                          },
                           child: Icon(Iconsax.refresh,
                               size: 22,
                               color: theme.colorScheme.onSurfaceVariant),
@@ -393,7 +410,10 @@ class PomodoroScreen extends ConsumerWidget {
                             borderRadius: 20,
                             padding:
                                 const EdgeInsets.symmetric(vertical: 18),
-                            onTap: notifier.toggle,
+                            onTap: () {
+                              HapticFeedback.heavyImpact();
+                              notifier.toggle();
+                            },
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

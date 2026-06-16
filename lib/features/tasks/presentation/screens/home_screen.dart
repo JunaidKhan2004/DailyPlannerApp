@@ -59,187 +59,192 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Builder(
         builder: (context) => Stack(
-        children: [
-          const AnimatedBackground(),
-          SafeArea(child: CustomScrollView(
-          slivers: [
-            // ── Rich Header ──
-            SliverToBoxAdapter(
-              child: _HomeHeader(
-                done: doneCount,
-                total: tasks.length,
-                onMenu: () => Scaffold.of(context).openDrawer(),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
-
-            // ── Live clock ──
-            const SliverToBoxAdapter(child: LiveClockCard()),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
-
-            // ── Calendar ──
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _CalendarFormatToggle(
-                      format: calendarFormat,
-                      onChanged: (f) =>
-                          ref.read(calendarFormatProvider.notifier).state = f,
-                    ),
-                    const SizedBox(height: 10),
-                    Surface3D(
-                      color: theme.colorScheme.surfaceContainerLow,
-                      edgeColor: AppTheme.dustyPink.withValues(alpha: 0.9),
-                      borderColor: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5),
-                      depth: 6,
-                      borderRadius: 20,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: TableCalendar(
-                        firstDay: DateTime(2020),
-                        lastDay: DateTime(2035),
-                        focusedDay: selectedDate,
-                        calendarFormat: calendarFormat,
-                        availableCalendarFormats: {
-                          calendarFormat: calendarFormat == CalendarFormat.week
-                              ? 'Week'
-                              : 'Month',
-                        },
-                        onFormatChanged: (_) {},
-                        selectedDayPredicate: (day) =>
-                            isSameDay(day, selectedDate),
-                        onDaySelected: (selected, _) =>
-                            ref.read(selectedDateProvider.notifier).state =
-                                AppDateUtils.dateOnly(selected),
-                        eventLoader: (day) => List.filled(
-                            countByDay[AppDateUtils.dateOnly(day)] ?? 0,
-                            null),
-                        daysOfWeekStyle: DaysOfWeekStyle(
-                          weekdayStyle: theme.textTheme.bodySmall!.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          weekendStyle: theme.textTheme.bodySmall!.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.priorityHigh
-                                .withValues(alpha: 0.8),
-                          ),
-                        ),
-                        headerStyle: HeaderStyle(
-                          formatButtonVisible: false,
-                          titleCentered: true,
-                          titleTextStyle: theme.textTheme.titleMedium!
-                              .copyWith(fontWeight: FontWeight.w800),
-                          leftChevronIcon: Transform.flip(
-                            flipX: true,
-                            child: Icon(Iconsax.arrow_right_3,
-                                size: 20,
-                                color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                          rightChevronIcon: Icon(Iconsax.arrow_right_3,
-                              size: 20,
-                              color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                        calendarStyle: CalendarStyle(
-                          outsideDaysVisible: false,
-                          selectedDecoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppTheme.gradientStart,
-                                AppTheme.gradientEnd,
-                              ],
-                            ),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Surface3D.darken(
-                                    AppTheme.deepPlum, 0.35),
-                                offset: const Offset(0, 3),
-                                blurRadius: 0,
-                              ),
-                            ],
-                          ),
-                          selectedTextStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          todayDecoration: BoxDecoration(
-                            color: AppTheme.peach.withValues(alpha: 0.6),
-                            shape: BoxShape.circle,
-                          ),
-                          todayTextStyle: TextStyle(
-                            color: Surface3D.darken(AppTheme.deepPlum, 0.1),
-                            fontWeight: FontWeight.w800,
-                          ),
-                          markerDecoration: const BoxDecoration(
-                            color: AppTheme.mauve,
-                            shape: BoxShape.circle,
-                          ),
-                          markersMaxCount: 3,
-                          markerSize: 5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Section header ──
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        AppDateUtils.headerForDate(selectedDate),
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    if (tasks.isNotEmpty)
-                      Surface3D(
-                        color: AppTheme.dustyPink.withValues(alpha: 0.5),
-                        edgeColor: AppTheme.mauve.withValues(alpha: 0.7),
-                        depth: 3,
-                        borderRadius: 20,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        child: Text(
-                          '${tasks.length} task${tasks.length == 1 ? '' : 's'}',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Task list ──
-            tasks.isEmpty
-                ? const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _EmptyState(),
-                  )
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => TaskCard(task: tasks[index]),
-                      childCount: tasks.length,
+          children: [
+            const AnimatedBackground(),
+            SafeArea(
+              child: NestedScrollView(
+                // ── Header + Clock scroll away ──────────────────────────────
+                headerSliverBuilder: (context, _) => [
+                  SliverToBoxAdapter(
+                    child: _HomeHeader(
+                      done: doneCount,
+                      total: tasks.length,
+                      onMenu: () => Scaffold.of(context).openDrawer(),
                     ),
                   ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  const SliverToBoxAdapter(child: LiveClockCard()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                ],
+                // ── Calendar pinned + Tasks independently scrollable ────────
+                body: Column(
+                  children: [
+                    // Calendar — fixed, always visible
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          _CalendarFormatToggle(
+                            format: calendarFormat,
+                            onChanged: (f) => ref
+                                .read(calendarFormatProvider.notifier)
+                                .state = f,
+                          ),
+                          const SizedBox(height: 10),
+                          Surface3D(
+                            color: theme.colorScheme.surfaceContainerLow,
+                            edgeColor:
+                                AppTheme.dustyPink.withValues(alpha: 0.9),
+                            borderColor: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.5),
+                            depth: 6,
+                            borderRadius: 20,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: TableCalendar(
+                              firstDay: DateTime(2020),
+                              lastDay: DateTime(2035),
+                              focusedDay: selectedDate,
+                              calendarFormat: calendarFormat,
+                              availableCalendarFormats: {
+                                calendarFormat:
+                                    calendarFormat == CalendarFormat.week
+                                        ? 'Week'
+                                        : 'Month',
+                              },
+                              onFormatChanged: (_) {},
+                              selectedDayPredicate: (day) =>
+                                  isSameDay(day, selectedDate),
+                              onDaySelected: (selected, _) => ref
+                                  .read(selectedDateProvider.notifier)
+                                  .state = AppDateUtils.dateOnly(selected),
+                              eventLoader: (day) => List.filled(
+                                  countByDay[AppDateUtils.dateOnly(day)] ?? 0,
+                                  null),
+                              daysOfWeekStyle: DaysOfWeekStyle(
+                                weekdayStyle:
+                                    theme.textTheme.bodySmall!.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                weekendStyle:
+                                    theme.textTheme.bodySmall!.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.priorityHigh
+                                      .withValues(alpha: 0.8),
+                                ),
+                              ),
+                              headerStyle: HeaderStyle(
+                                formatButtonVisible: false,
+                                titleCentered: true,
+                                titleTextStyle: theme.textTheme.titleMedium!
+                                    .copyWith(fontWeight: FontWeight.w800),
+                                leftChevronIcon: Transform.flip(
+                                  flipX: true,
+                                  child: Icon(Iconsax.arrow_right_3,
+                                      size: 20,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant),
+                                ),
+                                rightChevronIcon: Icon(Iconsax.arrow_right_3,
+                                    size: 20,
+                                    color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                              calendarStyle: CalendarStyle(
+                                outsideDaysVisible: false,
+                                selectedDecoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppTheme.gradientStart,
+                                      AppTheme.gradientEnd,
+                                    ],
+                                  ),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Surface3D.darken(
+                                          AppTheme.deepPlum, 0.35),
+                                      offset: const Offset(0, 3),
+                                      blurRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                                selectedTextStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                todayDecoration: BoxDecoration(
+                                  color: AppTheme.peach.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                todayTextStyle: TextStyle(
+                                  color: Surface3D.darken(
+                                      AppTheme.deepPlum, 0.1),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                markerDecoration: const BoxDecoration(
+                                  color: AppTheme.mauve,
+                                  shape: BoxShape.circle,
+                                ),
+                                markersMaxCount: 3,
+                                markerSize: 5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                    // Section header — fixed
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 14, 24, 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              AppDateUtils.headerForDate(selectedDate),
+                              style: theme.textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          if (tasks.isNotEmpty)
+                            Surface3D(
+                              color: AppTheme.dustyPink.withValues(alpha: 0.5),
+                              edgeColor: AppTheme.mauve.withValues(alpha: 0.7),
+                              depth: 3,
+                              borderRadius: 20,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 5),
+                              child: Text(
+                                '${tasks.length} task${tasks.length == 1 ? '' : 's'}',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Task list — independently scrollable
+                    Expanded(
+                      child: tasks.isEmpty
+                          ? const _EmptyState()
+                          : ListView.builder(
+                              padding:
+                                  const EdgeInsets.only(top: 4, bottom: 100),
+                              itemCount: tasks.length,
+                              itemBuilder: (context, index) =>
+                                  TaskCard(task: tasks[index]),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
-        )),
-        ],
-      ),
         ),
+      ),
     );
   }
 }

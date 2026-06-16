@@ -9,6 +9,8 @@ import '../../app/router/app_router.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/firebase_auth_service.dart';
+import '../../features/tasks/presentation/providers/task_providers.dart';
+import 'app_toast.dart';
 import 'confirm_dialog.dart';
 import 'surface_3d.dart';
 
@@ -28,6 +30,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     final isDark = theme.brightness == Brightness.dark;
     final currentRoute = GoRouterState.of(context).matchedLocation;
     final user = ref.watch(currentUserProvider);
+    final streak = ref.watch(appStatsProvider).streak;
 
     return Drawer(
       backgroundColor: theme.colorScheme.surface,
@@ -99,6 +102,36 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (streak > 0) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.25),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('🔥',
+                                        style: TextStyle(fontSize: 12)),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '$streak day streak',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -185,9 +218,9 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                               isSelected: false,
                               onTap: () async {
                                 if (user != null) {
-                                  Navigator.of(context).pop();
+                                  // Confirm while drawer is still mounted
                                   final confirmed = await showConfirmDialog(
-                                    context,
+                                    this.context,
                                     title: 'Sign Out',
                                     message: 'Are you sure you want to sign out?',
                                     confirmLabel: 'Sign Out',
@@ -195,9 +228,14 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                                     confirmColor: AppTheme.priorityHigh,
                                   );
                                   if (!confirmed) return;
-                                  if (mounted) setState(() => _signingOut = true);
+                                  if (!mounted) return;
+                                  Navigator.of(this.context).pop();
+                                  setState(() => _signingOut = true);
                                   await FirebaseAuthService.signOut();
-                                  if (mounted) setState(() => _signingOut = false);
+                                  if (mounted) {
+                                    setState(() => _signingOut = false);
+                                    AppToast.success(this.context, 'Signed out successfully');
+                                  }
                                 } else {
                                   Navigator.of(context).pop();
                                   context.push(AppRoutes.login);

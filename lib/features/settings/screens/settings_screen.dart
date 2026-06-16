@@ -4,6 +4,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import '../../../app/theme/app_theme.dart';
 import '../../../core/widgets/animated_background.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/surface_3d.dart';
 import '../providers/settings_providers.dart';
 
@@ -122,27 +123,30 @@ class SettingsScreen extends ConsumerWidget {
                                 icon: Iconsax.sun_1,
                                 label: 'Light',
                                 isSelected: themeMode == ThemeMode.light,
-                                onTap: () => ref
-                                    .read(themeModeProvider.notifier)
-                                    .setMode(ThemeMode.light),
+                                onTap: () {
+                                  ref.read(themeModeProvider.notifier).setMode(ThemeMode.light);
+                                  AppToast.info(context, 'Light mode enabled');
+                                },
                               ),
                               _Divider(),
                               _ThemeOption(
                                 icon: Iconsax.moon,
                                 label: 'Dark',
                                 isSelected: themeMode == ThemeMode.dark,
-                                onTap: () => ref
-                                    .read(themeModeProvider.notifier)
-                                    .setMode(ThemeMode.dark),
+                                onTap: () {
+                                  ref.read(themeModeProvider.notifier).setMode(ThemeMode.dark);
+                                  AppToast.info(context, 'Dark mode enabled');
+                                },
                               ),
                               _Divider(),
                               _ThemeOption(
                                 icon: Iconsax.mobile,
                                 label: 'System Default',
                                 isSelected: themeMode == ThemeMode.system,
-                                onTap: () => ref
-                                    .read(themeModeProvider.notifier)
-                                    .setMode(ThemeMode.system),
+                                onTap: () {
+                                  ref.read(themeModeProvider.notifier).setMode(ThemeMode.system);
+                                  AppToast.info(context, 'Following system theme');
+                                },
                               ),
                             ],
                           ),

@@ -10,6 +10,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/widgets/animated_background.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/surface_3d.dart';
 import '../../data/models/task_model.dart';
@@ -154,6 +155,10 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
           category: _category,
           subtasks: _subtasks,
         ));
+        if (mounted) {
+          AppToast.success(context, 'Task updated successfully');
+          context.pop();
+        }
       } else {
         final now = DateTime.now();
         await repo.addTask(TaskModel(
@@ -168,8 +173,13 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
           createdAt: now,
           updatedAt: now,
         ));
+        if (mounted) {
+          AppToast.success(context, 'Task created!');
+          context.pop();
+        }
       }
-      if (mounted) context.pop();
+    } catch (_) {
+      if (mounted) AppToast.error(context, 'Failed to save task. Try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -675,7 +685,10 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen>
                               await ref
                                   .read(taskRepositoryProvider)
                                   .deleteTask(widget.task!.id);
-                              if (context.mounted) context.pop();
+                              if (context.mounted) {
+                                AppToast.success(context, 'Task deleted');
+                                context.pop();
+                              }
                             },
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -906,24 +919,65 @@ class _PickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasValue = onClear != null;
+
     return Surface3D(
-      color: theme.colorScheme.surfaceContainerLow,
-      edgeColor: AppTheme.dustyPink.withValues(alpha: 0.9),
-      borderColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+      color: hasValue
+          ? AppTheme.mauve.withValues(alpha: 0.08)
+          : theme.colorScheme.surfaceContainerLow,
+      edgeColor: hasValue
+          ? AppTheme.mauve.withValues(alpha: 0.6)
+          : AppTheme.dustyPink.withValues(alpha: 0.9),
+      borderColor: hasValue
+          ? AppTheme.mauve.withValues(alpha: 0.3)
+          : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
       depth: 5,
       borderRadius: 18,
-      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       onTap: onTap,
       child: Row(
         children: [
-          Container(
+          // Icon circle with clear badge overlay when value set
+          SizedBox(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.mauve.withValues(alpha: 0.15),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: hasValue
+                        ? AppTheme.mauve.withValues(alpha: 0.2)
+                        : AppTheme.mauve.withValues(alpha: 0.15),
+                  ),
+                  child: Icon(icon, size: 17, color: AppTheme.mauve),
+                ),
+                if (hasValue)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: GestureDetector(
+                      onTap: onClear,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.colorScheme.surface,
+                        ),
+                        child: Icon(
+                          Iconsax.close_circle,
+                          size: 16,
+                          color: AppTheme.mauve,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            child: Icon(icon, size: 17, color: AppTheme.mauve),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -941,22 +995,17 @@ class _PickerTile extends StatelessWidget {
                         : theme.colorScheme.onSurface,
                   ),
                 ),
-                Text(
-                  sublabel,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color:
-                        theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                if (!hasValue)
+                  Text(
+                    sublabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.6),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          if (onClear != null)
-            GestureDetector(
-              onTap: onClear,
-              child: Icon(Iconsax.close_circle,
-                  size: 16, color: theme.colorScheme.onSurfaceVariant),
-            ),
         ],
       ),
     );
@@ -978,44 +1027,67 @@ class _CategoryOption extends StatelessWidget {
 
   Color get _color => switch (category) {
         TaskCategory.personal => AppTheme.mauve,
-        TaskCategory.work => const Color(0xFF5B8DEF),
-        TaskCategory.health => const Color(0xFF4CAF50),
-        TaskCategory.study => const Color(0xFFFF9800),
-        TaskCategory.other => const Color(0xFF9E9E9E),
+        TaskCategory.work     => const Color(0xFF5B8DEF),
+        TaskCategory.health   => const Color(0xFF4CAF50),
+        TaskCategory.study    => const Color(0xFFFF9800),
+        TaskCategory.other    => const Color(0xFF9E9E9E),
       };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final unsel = theme.colorScheme.onSurfaceVariant;
+
     return Surface3D(
       color: isSelected ? _color : theme.colorScheme.surfaceContainerLow,
       edgeColor: isSelected
-          ? Surface3D.darken(_color, 0.3)
+          ? Surface3D.darken(_color, 0.35)
           : theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
       borderColor: isSelected
-          ? Surface3D.darken(_color, 0.15)
+          ? Surface3D.darken(_color, 0.2)
           : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-      depth: isSelected ? 5 : 4,
-      borderRadius: 14,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      depth: isSelected ? 6 : 4,
+      borderRadius: 18,
+      padding: const EdgeInsets.symmetric(vertical: 16),
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            category.emoji,
-            style: const TextStyle(fontSize: 20),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            category.label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color: isSelected
-                  ? Colors.white
-                  : theme.colorScheme.onSurfaceVariant,
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : theme.colorScheme.surfaceContainerHigh,
+            ),
+            child: Icon(
+              category.icon as IconData,
+              size: 20,
+              color: isSelected ? Colors.white : unsel,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            category.shortLabel,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: isSelected ? Colors.white : unsel,
+            ),
+          ),
+          if (isSelected) ...[
+            const SizedBox(height: 4),
+            Container(
+              width: 20,
+              height: 3,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
         ],
       ),
     );

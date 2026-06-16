@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
@@ -7,15 +8,56 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/surface_3d.dart';
 import '../../data/models/task_model.dart';
 import '../providers/task_providers.dart';
 
-class TaskCard extends ConsumerWidget {
+class TaskCard extends ConsumerStatefulWidget {
   const TaskCard({super.key, required this.task});
 
   final TaskModel task;
+
+  @override
+  ConsumerState<TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends ConsumerState<TaskCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _checkCtrl;
+  late final Animation<double> _checkScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _checkScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _checkCtrl, curve: Curves.elasticOut),
+    );
+    if (widget.task.isCompleted) _checkCtrl.value = 1.0;
+  }
+
+  @override
+  void didUpdateWidget(TaskCard old) {
+    super.didUpdateWidget(old);
+    if (widget.task.isCompleted && !old.task.isCompleted) {
+      _checkCtrl.forward(from: 0);
+    } else if (!widget.task.isCompleted && old.task.isCompleted) {
+      _checkCtrl.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _checkCtrl.dispose();
+    super.dispose();
+  }
+
+  TaskModel get task => widget.task;
 
   bool get _isOverdue {
     if (task.isCompleted) return false;
@@ -56,7 +98,7 @@ class TaskCard extends ConsumerWidget {
       };
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final repo = ref.read(taskRepositoryProvider);
 
@@ -64,9 +106,45 @@ class TaskCard extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Slidable(
         key: ValueKey(task.id),
+        // ── Swipe right → toggle complete ────────────────────────────────────
+        startActionPane: ActionPane(
+          motion: const BehindMotion(),
+          extentRatio: 0.18,
+          children: [
+            CustomSlidableAction(
+              onPressed: (_) async {
+                HapticFeedback.mediumImpact();
+                await repo.toggleCompleted(task.id);
+                if (context.mounted) {
+                  AppToast.success(
+                    context,
+                    task.isCompleted ? 'Marked as pending' : 'Task completed!',
+                  );
+                }
+              },
+              backgroundColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.priorityLow,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  task.isCompleted ? Iconsax.refresh : Iconsax.tick_circle,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        // ── Swipe left → delete ───────────────────────────────────────────────
         endActionPane: ActionPane(
-          motion: const StretchMotion(),
-          extentRatio: 0.22,
+          motion: const BehindMotion(),
+          extentRatio: 0.18,
           children: [
             CustomSlidableAction(
               onPressed: (_) async {
@@ -79,54 +157,20 @@ class TaskCard extends ConsumerWidget {
                 if (!confirmed) return;
                 await repo.deleteTask(task.id);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Task deleted'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: theme.colorScheme.error,
-                    ),
-                  );
+                  AppToast.success(context, 'Task deleted');
                 }
               },
               backgroundColor: Colors.transparent,
-              foregroundColor: theme.colorScheme.onError,
               padding: EdgeInsets.zero,
               child: Container(
-                margin: const EdgeInsets.only(left: 8),
+                width: double.infinity,
+                height: double.infinity,
+                margin: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFE57373),
-                      theme.colorScheme.error,
-                    ],
-                  ),
+                  color: AppTheme.priorityHigh,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.error.withValues(alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Iconsax.trash, size: 22, color: Colors.white),
-                    SizedBox(height: 4),
-                    Text(
-                      'Delete',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
+                child: const Icon(Iconsax.trash, size: 22, color: Colors.white),
               ),
             ),
           ],
@@ -150,7 +194,10 @@ class TaskCard extends ConsumerWidget {
                     children: [
                       // Animated round checkbox
                       GestureDetector(
-                        onTap: () => repo.toggleCompleted(task.id),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          repo.toggleCompleted(task.id);
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           width: 26,
@@ -166,8 +213,11 @@ class TaskCard extends ConsumerWidget {
                             ),
                           ),
                           child: task.isCompleted
-                              ? const Icon(Icons.check_rounded,
-                                  size: 17, color: Colors.white)
+                              ? ScaleTransition(
+                                  scale: _checkScale,
+                                  child: const Icon(Icons.check_rounded,
+                                      size: 17, color: Colors.white),
+                                )
                               : null,
                         ),
                       ),
@@ -210,8 +260,7 @@ class TaskCard extends ConsumerWidget {
                                 _Chip(
                                   label: task.category.label,
                                   color: _categoryColor,
-                                  icon: null,
-                                  emoji: task.category.emoji,
+                                  icon: task.category.icon as IconData,
                                 ),
                                 _Chip(
                                   label: _priorityLabel,
@@ -287,12 +336,11 @@ class TaskCard extends ConsumerWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color, this.icon, this.emoji});
+  const _Chip({required this.label, required this.color, this.icon});
 
   final String label;
   final Color color;
   final IconData? icon;
-  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
@@ -305,10 +353,7 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (emoji != null) ...[
-            Text(emoji!, style: const TextStyle(fontSize: 11)),
-            const SizedBox(width: 4),
-          ] else if (icon != null) ...[
+          if (icon != null) ...[
             Icon(icon, size: 12, color: color),
             const SizedBox(width: 4),
           ],

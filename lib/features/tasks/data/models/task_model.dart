@@ -1,4 +1,5 @@
 import 'package:hive_ce/hive.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 enum TaskPriority { low, medium, high }
 
@@ -11,18 +12,35 @@ enum TaskCategory {
 
   String get label => switch (this) {
         TaskCategory.personal => 'Personal',
-        TaskCategory.work => 'Work',
-        TaskCategory.health => 'Health',
-        TaskCategory.study => 'Study',
-        TaskCategory.other => 'Other',
+        TaskCategory.work     => 'Work',
+        TaskCategory.health   => 'Health',
+        TaskCategory.study    => 'Study',
+        TaskCategory.other    => 'Other',
       };
 
+  String get shortLabel => switch (this) {
+        TaskCategory.personal => 'Home',
+        TaskCategory.work     => 'Work',
+        TaskCategory.health   => 'Health',
+        TaskCategory.study    => 'Study',
+        TaskCategory.other    => 'Other',
+      };
+
+  // kept for Firestore/search display
   String get emoji => switch (this) {
         TaskCategory.personal => '🏠',
-        TaskCategory.work => '💼',
-        TaskCategory.health => '💪',
-        TaskCategory.study => '📚',
-        TaskCategory.other => '📌',
+        TaskCategory.work     => '💼',
+        TaskCategory.health   => '💪',
+        TaskCategory.study    => '📚',
+        TaskCategory.other    => '📌',
+      };
+
+  dynamic get icon => switch (this) {
+        TaskCategory.personal => Iconsax.home_2,
+        TaskCategory.work     => Iconsax.briefcase,
+        TaskCategory.health   => Iconsax.heart,
+        TaskCategory.study    => Iconsax.book_1,
+        TaskCategory.other    => Iconsax.category_2,
       };
 }
 
