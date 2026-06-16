@@ -74,11 +74,17 @@
 
 ## Screenshots
 
-> _(Add screenshots here)_
+| Login | Onboarding | Home (Dark) | Home (Light) |
+|-------|------------|-------------|--------------|
+| ![login](screenshots/login.png) | ![onboarding](screenshots/onboarding.png) | ![home dark](screenshots/home_dark.png) | ![home light](screenshots/home_light.png) |
 
-| Home | Add Task | Pomodoro | Stats |
-|------|----------|----------|-------|
-| ![home](screenshots/home.png) | ![add](screenshots/add_task.png) | ![pomodoro](screenshots/pomodoro.png) | ![stats](screenshots/stats.png) |
+| Add Task | Search | Stats | Pomodoro |
+|----------|--------|-------|----------|
+| ![add task](screenshots/add_task_top.png) | ![search](screenshots/search.png) | ![stats](screenshots/stats_full.png) | ![pomodoro](screenshots/pomodoro.png) |
+
+| Drawer | Settings | Sign Out |
+|--------|----------|----------|
+| ![drawer](screenshots/drawer.png) | ![settings](screenshots/settings.png) | ![signout](screenshots/signout_dialog.png) |
 
 ---
 
